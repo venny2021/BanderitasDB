@@ -387,7 +387,7 @@ GetPreviousMap(Handle:query)
 	server_print("Query columns: %d rows: %d", columns, rows)
 
     SQL_ReadResult(query, 0, prevMatchId)
-	SQL_ReadResult(query, 1, prevCapturasAzul)
+	SQL_ReadResult(query, 0, prevCapturasAzul)
 	SQL_ReadResult(query, 2, prevMapname, 31)
     server_print("MatchID Ant = %i, Score Ant = %i, MapAnterior = %s", prevMatchId, prevCapturasAzul, prevMapname)
 }
