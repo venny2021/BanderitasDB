@@ -26,7 +26,10 @@ new g_mp_timelimit
 new szMapName[32];
 new szPreviousMapName[32];
 new Handle:g_hSqlHandle, g_szQuery[512];
-new MatchID, prevMatchId, prevCapturasAzul, prevMapname[32]; // esto en pawn
+new MatchID
+new prevMatchId
+new prevCapturasAzul[128];
+new prevMapname[32]; // esto en pawn
 new bool:Insertado = false
 new bool:FirstUpdate=true;
 new const g_iTimeBetweenCalls = 3;
@@ -37,9 +40,9 @@ new g_iLastCall;
 
 #if SAVE_TYPE == MYSQL
 new const SQL_CONNECT_DATA[][] = {
-	"server", // Server
-	"user", // USER
-	"pass",  // PASS
+	"localhost", // Server
+	"username", // USER
+	"password",  // PASS
 	"db" // DBaa
 };
 #endif
@@ -100,7 +103,7 @@ public initializemap(taskid)
     SQL_ThreadQuery(g_hSqlHandle,"QueryHandler_GetPreviousMap", g_szQuery);
 	// First Part
 
-    if (num < 7)
+    if (num < 2)
     {
         server_print("No hay players suficientes (%i) para grabar partida",num)
 		    Insertado = false
@@ -118,8 +121,7 @@ public initializemap(taskid)
 
         //Base de datos cada vez que se cambia de mapa
         get_mapname(szMapName, charsmax(szMapName));
-        FormatQuery(g_szQuery, charsmax(g_szQuery), "INSERT INTO partidas (Mapname, CapturasAzul, Equipo1, Equipo2, Equipo1_steamId, Equipo2_steamId , Espectadores, Fecha) VALUES ('%s', '%i', 'Azul', 'Rojo', 'SteamIdAzul', 'SteamIdRojo', 'Specs', '%s')"
-                                                    , szMapName, blueScore, Fecha ); // Primer Query cuando inicia el map
+        FormatQuery(g_szQuery, charsmax(g_szQuery), "INSERT INTO partidas (Mapname, CapturasAzul, Equipo1, Equipo2, Equipo1_steamId, Equipo2_steamId , Espectadores, Fecha) VALUES ('%s', '%i', 'Azul', 'Rojo', 'SteamIdAzul', 'SteamIdRojo', 'Specs', '%s')" 		, szMapName, blueScore, Fecha ); // Primer Query cuando inicia el map
         SQL_ThreadQuery(g_hSqlHandle,"QueryHandler_InsertMatch", g_szQuery);
 
         formatex(g_szQuery, charsmax(g_szQuery), "SELECT MatchID FROM partidas WHERE Mapname = '%s' ORDER BY 1 DESC LIMIT 1", szMapName)
@@ -139,7 +141,7 @@ public traerBanderas()
     }
   new players[32], num
   get_players(players, num, "") // Check teams of all connected players.
-  if (num < 7)
+  if (num < 2)
     return // Si hay menos de 8 jugadores no hacer nada
     
   // esta funcion la llama cada vez que se actualiza algo de un equipo
@@ -260,7 +262,7 @@ public update_scores()
 
 public cmdScore(id)
 {	
-	client_print(0,print_chat, "El score del mapa anterior fue %i en %s",prevCapturasAzul,prevMapname);
+	client_print(0,print_chat, "El score del mapa anterior fue %s en %s",prevCapturasAzul,prevMapname);
 	return PLUGIN_CONTINUE;
 }
 
@@ -280,7 +282,7 @@ public client_PreThink(id)
 			g_iLastCall = iCurTime;
 			new timeleft = get_timeleft();
 			set_hudmessage(255, 255, 255, 0.01, 0.3, 0, 0, 3.0, 0.1, 0.2, 13);
-			show_hudmessage(id,"Timeleft: %d:%02d^nScore: %i",timeleft / 60, timeleft % 60, prevCapturasAzul);
+			show_hudmessage(id,"Timeleft: %d:%02d^nScore: %s",timeleft / 60, timeleft % 60, prevCapturasAzul);
 		}
 	}
 	return PLUGIN_CONTINUE
@@ -387,7 +389,10 @@ GetPreviousMap(Handle:query)
 	server_print("Query columns: %d rows: %d", columns, rows)
 
     SQL_ReadResult(query, 0, prevMatchId)
-	SQL_ReadResult(query, 1, prevCapturasAzul)
+	//SQL_ReadResult(query, 0, prevCapturasAzul)
+	SQL_ReadResult(query, 1, prevCapturasAzul, 127);
+	//SQL_ReadResult(query, 2, prevCapturasAzul)
+	server_print("CAPTURAS PREVIAS AZULES %s", prevCapturasAzul)
 	SQL_ReadResult(query, 2, prevMapname, 31)
     server_print("MatchID Ant = %i, Score Ant = %i, MapAnterior = %s", prevMatchId, prevCapturasAzul, prevMapname)
 }
